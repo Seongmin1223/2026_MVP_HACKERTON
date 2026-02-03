@@ -1,25 +1,16 @@
-import logo from './logo.svg';
-import './App.css';
+import { useState } from "react";
+import SimvexLanding from "./Simvexlanding.js";
+import StudyPage from "./Studypage.js";
+import LearnPage from "./Learnpage.js";
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
-  );
+export default function App() {
+  const [page, setPage] = useState("landing"); // "landing" | "study" | "learn"
+
+  if (page === "learn") {
+    return <LearnPage onHome={() => setPage("landing")} onStudy={() => setPage("study")} />;
+  }
+  if (page === "study") {
+    return <StudyPage onHome={() => setPage("landing")} onLearn={() => setPage("learn")} />;
+  }
+  return <SimvexLanding onStart={() => setPage("study")} />;
 }
-
-export default App;
