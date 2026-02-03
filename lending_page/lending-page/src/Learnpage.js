@@ -219,9 +219,8 @@ export default function LearnPage({ onHome, onStudy }) {
   const [activeNav, setActiveNav]   = useState("Study");
   const [activeTab, setActiveTab]   = useState("조립품");
   const [activePart, setActivePart] = useState(3);
-  const [showProduct, setShowProduct] = useState(false);
-  const [showInfoPanel, setShowInfoPanel] = useState(true); // 정보패널 표시 여부
-  const [inputVal, setInputVal]     = useState("");
+  const [showInfoPanel, setShowInfoPanel]       = useState(true); // 오른쪽 부품 패널
+  const [showProductPanel, setShowProductPanel] = useState(true); // 왼쪽 완제품 패널
   const [memos, setMemos]           = useState(INIT_MEMOS);
   const [expandedMemo, setExpandedMemo] = useState(null);
 
@@ -348,81 +347,83 @@ export default function LearnPage({ onHome, onStudy }) {
               <div className="viewer-panel">
                 {/* 본체행: 3D 왼쪽 + 정보패널 오른쪽 */}
                 <div className="viewer-body-row">
-                {/* 3D 모델 영역 */}
-                <div className={`viewer-3d${showInfoPanel ? "" : " expanded"}`}>
+
+                {/* ── 왼쪽 완제품 패널 ── */}
+                {showProductPanel && (
+                <div className="viewer-product">
+                  <div className="viewer-product-header">
+                    <div className="viewer-product-title">완제품 개요</div>
+                    <button className="viewer-info-close" onClick={()=>setShowProductPanel(false)}>✕</button>
+                  </div>
+                  <div className="viewer-product-body">
+                    <div className="viewer-info-product-desc">{PRODUCT_INFO.desc}</div>
+                    {PRODUCT_INFO.sections.map((sec,i) => (
+                      <div key={i} className="viewer-info-section">
+                        <div className="viewer-info-section-title">{sec.title}</div>
+                        <div className="viewer-info-section-desc">{sec.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                )}
+
+                {/* ── 3D 모델 영역 ── */}
+                <div className={`viewer-3d${(!showInfoPanel && !showProductPanel) ? " expanded" : ""}`}>
                   <div className="viewer-3d-svg">
                     <ViewerEngineSVG />
                   </div>
-                  {/* 축소/확대 */}
-                  <div className="viewer-zoom-btns">
-                    <button className="viewer-zoom-btn">＋</button>
-                    <button className="viewer-zoom-btn">－</button>
-                  </div>
-                  {/* 패널 복원 버튼 (패널이 숨길 때만) */}
+
+                  {/* 왼쪽 복원 버튼 */}
+                  {!showProductPanel && (
+                    <button className="viewer-panel-restore viewer-panel-restore-left" onClick={()=>setShowProductPanel(true)}>
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                        <path d="M5 2l5 5-5 5"/>
+                      </svg>
+                    </button>
+                  )}
+                  {/* 오른쪽 복원 버튼 */}
                   {!showInfoPanel && (
-                    <button className="viewer-panel-restore" onClick={()=>setShowInfoPanel(true)}>
+                    <button className="viewer-panel-restore viewer-panel-restore-right" onClick={()=>setShowInfoPanel(true)}>
                       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                         <path d="M9 2L4 7l5 5"/>
                       </svg>
                     </button>
                   )}
                 </div>
-                {/* 정보 패널 (오른쪽) — showInfoPanel에 따라 조건부 렌더 */}
+
+                {/* ── 오른쪽 부품 패널 ── */}
                 {showInfoPanel && (
                 <div className="viewer-info">
-                  {/* 헤더 */}
                   <div className="viewer-info-header">
-                    <div className="viewer-info-header-left">
-                      <div className="viewer-info-title">제트 엔진</div>
-                      <button className="viewer-info-help" onClick={()=>setShowProduct(true)}>?</button>
-                    </div>
+                    <div className="viewer-info-title">부품 설명</div>
                     <button className="viewer-info-close" onClick={()=>setShowInfoPanel(false)}>✕</button>
                   </div>
-
-                  {/* 완제품 설명 모드 vs 부품 설명 모드 */}
-                  {showProduct ? (
-                    <div className="viewer-info-product">
-                      <button className="viewer-info-back" onClick={()=>setShowProduct(false)}>
-                        ← 돌아가기
-                      </button>
-                      <div className="viewer-info-product-title">{PRODUCT_INFO.title}</div>
-                      <div className="viewer-info-product-desc">{PRODUCT_INFO.desc}</div>
-                      {PRODUCT_INFO.sections.map((sec,i) => (
-                        <div key={i} className="viewer-info-section">
-                          <div className="viewer-info-section-title">{sec.title}</div>
-                          <div className="viewer-info-section-desc">{sec.desc}</div>
-                        </div>
-                      ))}
+                  <div className="viewer-parts-grid">
+                    {PART_ICONS.map((Icon,i) => (
+                      <div key={i} className={`viewer-part-thumb${activePart===i?" active":""}`} onClick={()=>setActivePart(i)}>
+                        <Icon />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="viewer-info-body">
+                    {INFO_SECTIONS.map((sec,i) => (
+                      <div key={i} className="viewer-info-section">
+                        <div className="viewer-info-section-title">{sec.title}</div>
+                        <div className="viewer-info-section-desc">{sec.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="viewer-difficulty">
+                    <div className="viewer-difficulty-label">난이도</div>
+                    <div className="viewer-difficulty-sub">현재 학습 단계별 난이도 표시</div>
+                    <div className="viewer-diff-bar-wrap">
+                      <div className="viewer-diff-bar"/>
+                      <div className="viewer-diff-marker"/>
                     </div>
-                  ) : (
-                    <>
-                      <div className="viewer-parts-grid">
-                        {PART_ICONS.map((Icon,i) => (
-                          <div key={i} className={`viewer-part-thumb${activePart===i?" active":""}`} onClick={()=>setActivePart(i)}>
-                            <Icon />
-                          </div>
-                        ))}
-                      </div>
-                      <div className="viewer-info-body">
-                        {INFO_SECTIONS.map((sec,i) => (
-                          <div key={i} className="viewer-info-section">
-                            <div className="viewer-info-section-title">{sec.title}</div>
-                            <div className="viewer-info-section-desc">{sec.desc}</div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="viewer-difficulty">
-                        <div className="viewer-difficulty-label">난이도</div>
-                        <div className="viewer-difficulty-sub">현재 학습 단계별 난이도 표시</div>
-                        <div className="viewer-diff-bar-wrap">
-                          <div className="viewer-diff-bar"/>
-                          <div className="viewer-diff-marker"/>
-                        </div>
-                      </div>
-                    </>
-                  )}
+                  </div>
                 </div>
                 )}
+
                 </div>{/* viewer-body-row 끝 */}
               </div>{/* viewer-panel 끝 */}
 
