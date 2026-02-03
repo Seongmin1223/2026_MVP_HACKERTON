@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMVEX - Bright Matte Viewer</title>
+    <style>
+        :root { --bg-dark: #0f1014; --bg-panel: rgba(20, 22, 28, 0.9); --accent-color: #3b82f6; --text-main: #ffffff; --border-color: #27272a; }
+        body { margin: 0; overflow: hidden; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Pretendard', sans-serif; }
+        #app-container { display: grid; grid-template-rows: 60px 1fr; grid-template-columns: 1fr 350px; height: 100vh; width: 100vw; }
+        header { grid-column: 1 / -1; background: var(--bg-dark); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-weight: bold; z-index: 10; }
+        #theme-toggle { background: #27272a; border: 1px solid #3f3f46; color: white; padding: 6px 14px; border-radius: 20px; cursor: pointer; font-size: 0.8rem; }
+        #viewport { position: relative; overflow: hidden; width: 100%; height: 100%; }
+        #viewport.dark-bg { background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%); }
+        #viewport.light-bg { background: radial-gradient(circle at center, #f8fafc 0%, #cbd5e1 100%); }
+        #viewport-overlay { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.6); padding: 12px 16px; border-radius: 8px; pointer-events: none; font-size: 0.85rem; color: #ccc; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); z-index: 100; }
+        .kbd { background: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; border-bottom: 2px solid #111; font-family: monospace; }
+        aside { background: var(--bg-panel); border-left: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+        h3 { margin: 0 0 12px 0; font-size: 0.9rem; color: var(--accent-color); text-transform: uppercase; }
+        .slider-container { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+        input[type=range] { flex-grow: 1; accent-color: var(--accent-color); cursor: pointer; }
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-color); font-size: 1.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header>
+            <div style="display:flex; align-items:center;">
+                <div style="color:#3b82f6; margin-right:20px;">SIMVEX</div> Study
+            </div>
+            <button id="theme-toggle">☀️ Light Background</button>
+        </header>
+        
+        <div id="viewport" class="dark-bg">
+            <div id="loading">데이터 로딩 중</div>
+            <div id="viewport-overlay">
+                <div style="font-weight:bold; margin-bottom:6px;">🎮 조작 가이드</div>
+                <div>• <span class="kbd">WASD</span> 이동 / <span class="kbd">좌클릭</span> 패닝 / <span class="kbd">우클릭</span> 회전</div>
+            </div>
+        </div>
+        <aside>
+            <div>
+                <h3>📦 Part Info</h3>
+                <h2 id="part-name" style="margin:0;">Unknown Asset</h2>
+                <p id="part-desc" style="color:#a1a1aa; font-size:0.9rem;">부품을 클릭하여 상세 정보를 확인하세요.</p>
+            </div>
+            <div>
+                <h3>🔧 Exploded View(분해도)</h3>
+                <div class="slider-container">
+                    <span>조립</span>
+                    <input type="range" id="explode-slider" min="0" max="100" value="0">
+                    <span>분해</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { OutlinePass } from 'three/addons/postprocessing/OutlinePass.js';
+
+        // --- [설정 변수] 여기서 모든 것을 관리하세요 ---
+        const CONFIG = {
+            assetName: "V4Engine", // 확장자 제외 파일 이름
+            basePath: "./Integrated 3D Asset/",
+            get glbPath() { return `${this.basePath}GLB/${this.assetName}.glb`; },
+            get jsonPath() { return `${this.basePath}JSON_FILE/Data_${this.assetName}.json`; }
+        };
+
+                // 1. 변환 없이 원본 이름 사용
+        const assetTitle = CONFIG.assetName || "UnknownAsset";
+
+        // 2. 안전하게 UI 업데이트 (요소가 없어도 에러가 나지 않음)
+        const headerEl = document.getElementById('header-mode-name');
+        if (headerEl) {
+            headerEl.innerText = `${assetTitle} Mode`;
+        }
+
+        const partNameEl = document.getElementById('part-name');
+        if (partNameEl) {
+            partNameEl.innerText = assetTitle;
+        }
+
+        console.log(`현재 로드 중인 에셋: ${assetTitle}`);
+
+        const container = document.getElementById('viewport');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.001, 1000);
+        camera.position.set(0.3, 0.3, 0.3);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.5; // 밝게 설정
+        container.appendChild(renderer.domElement);
+
+        // --- 밝은 조명 시스템 ---
+        scene.add(new THREE.AmbientLight(0xffffff, 1.0));
+        scene.add(new THREE.HemisphereLight(0xffffff, 0x444444, 0.8));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        dirLight.position.set(2, 4, 3);
+        scene.add(dirLight);
+
+        // --- 선택 테두리 효과 설정 ---
+        const composer = new EffectComposer(renderer);
+        const renderPass = new RenderPass(scene, camera);
+        composer.addPass(renderPass);
+
+        const outlinePass = new OutlinePass(new THREE.Vector2(container.clientWidth, container.clientHeight), scene, camera);
+        outlinePass.edgeStrength = 4.0;
+        outlinePass.visibleEdgeColor.set('#3b82f6');
+        composer.addPass(outlinePass);
+
+        // --- 패닝 및 컨트롤 설정 ---
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.screenSpacePanning = true; 
+        controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE };
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let parts = [];
+        let uniqueLogicalParts = [];
+
+        // 배경 토글
+        document.getElementById('theme-toggle').addEventListener('click', (e) => {
+            const isDark = container.classList.contains('dark-bg');
+            container.classList.toggle('dark-bg', !isDark);
+            container.classList.toggle('light-bg', isDark);
+            e.target.innerText = isDark ? "🌙 Dark Background" : "☀️ Light Background";
+        });
+
+        async function loadAsset() {
+            try {
+                const res = await fetch(CONFIG.jsonPath);
+                const data = await res.json();
+                const loader = new GLTFLoader();
+
+                loader.load(CONFIG.glbPath, (gltf) => {
+                    const root = gltf.scene;
+                    scene.add(root);
+
+                    // 초기화: 새로운 모델 로드 시 기존 데이터 비우기
+                    uniqueLogicalParts = []; 
+                    parts = [];
+
+                    root.traverse(child => {
+                        if (child.isMesh) {
+                            let current = child;
+                            let assetData = null;
+                            let logicalPart = null;
+
+                            // 부모를 타고 올라가며 JSON의 ID와 일치하는 '진짜 부품' 찾기
+                            while (current && current !== root) {
+                                assetData = data.assets.find(a => a.id === current.name);
+                                if (assetData) {
+                                    logicalPart = current;
+                                    break;
+                                }
+                                current = current.parent;
+                            }
+
+                            if (logicalPart) {
+                                child.userData.logicalPart = logicalPart;
+                                child.userData.title = assetData.title || logicalPart.name;
+                                child.userData.desc = assetData.desc || "";
+
+                                const ev = assetData.explodeVector
+                                logicalPart.userData.manualVector = (ev && (ev.x !== 0 || ev.y !== 0 || ev.z !== 0)) ? new THREE.Vector3(ev.x, ev.y, ev.z) :null;
+                                // [수정] 슬라이더가 움직일 부품(Logical Part)을 중복 없이 수집
+                                if (!uniqueLogicalParts.includes(logicalPart)) {
+                                    logicalPart.userData.assemblyPos = logicalPart.position.clone();
+                                    uniqueLogicalParts.push(logicalPart); 
+                                }
+
+                                parts.push(child); // 클릭은 메쉬가 담당
+                                
+                                child.material.metalness = 0;
+                                child.material.roughness = 0.6;
+                            }
+                        }
+                    });
+
+                    document.getElementById('loading').style.display = 'none';
+
+                    // [수정] 이제 'parts'가 아니라 'uniqueLogicalParts'를 넘겨줍니다.
+                    calculateExplosion(uniqueLogicalParts, root); 
+                    
+                    fitCamera(root);
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        function calculateExplosion(list, root) {
+            // [보안] root가 제대로 전달되지 않으면 중단 (updateWorldMatrix 에러 방지)
+            if (!root) return; 
+
+            const box = new THREE.Box3().setFromObject(root);
+            const center = box.getCenter(new THREE.Vector3());
+
+            list.forEach(p => {
+                if (p.userData.manualVector){ //벡터 지정값이 있을때
+                    p.userData.explodeDir = p.userData.manualVector.clone().normalize();
+                }
+                else{ //벡터 지정값이 없을때
+                    // 각 부모 부품(BASE, NUT 등)의 중심점을 구함
+                    const pBox = new THREE.Box3().setFromObject(p);
+                    const pCenter = pBox.getCenter(new THREE.Vector3());
+                    let dir = new THREE.Vector3().subVectors(pCenter, center);
+    
+                    // [추가] 만약 중심이 겹쳐서 방향이 안 나온다면 랜덤한 방향이나 살짝 위로 설정
+                    if (dir.length() < 0.0001) {
+                        dir.set(Math.random() - 0.5, 0.1, Math.random() - 0.5);
+                    }
+                    
+                    p.userData.explodeDir = dir.normalize();
+
+                }
+                
+            });
+        }
+
+        function fitCamera(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const center = box.getCenter(new THREE.Vector3());
+            const dist = box.getSize(new THREE.Vector3()).length() * 1.5;
+            camera.position.set(center.x + dist, center.y + dist/2, center.z + dist);
+            controls.target.copy(center);
+        }
+
+        // --- 선택 시 반투명 강조 기능 ---
+        function setHighlight(selectedTarget) {
+            parts.forEach(p => {
+                p.traverse(node => {
+                    if (node.isMesh) {
+                        if (selectedTarget && p === selectedTarget) {
+                            node.material.transparent = false;
+                            node.material.opacity = 1.0;
+                        } else if (selectedTarget) {
+                            node.material.transparent = true;
+                            node.material.opacity = 0.2;
+                        } else {
+                            node.material.transparent = false;
+                            node.material.opacity = 1.0;
+                        }
+                    }
+                });
+            });
+        }
+
+        // 선택 이벤트
+        window.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // 클릭 시점의 시점 이동 방해 금지
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(parts, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while(target && !parts.includes(target)) { target = target.parent; }
+                if (target) {
+                    outlinePass.selectedObjects = [target];
+
+                    document.getElementById('part-name').innerText = target.userData.title;
+                    document.getElementById('part-desc').innerText = target.userData.desc;
+
+                    if (nameEl) nameEl.innerText = target.userData.title;
+                    if (descEl) descEl.innerText = target.userData.desc;
+
+                    setHighlight(target);
+                }
+            } else {
+                outlinePass.selectedObjects = [];
+                setHighlight(null);
+                
+                const nameEl = document.getElementById('part-name');
+                const descEl = document.getElementById('part-desc');
+
+                // 선택 해제 시 원래 에셋 이름(CONFIG.assetName)으로 복구
+                if (nameEl) nameEl.innerText = CONFIG.assetName; 
+                if (descEl) descEl.innerText = "부품을 클릭하여 상세 정보를 확인하세요.";   
+               
+            }
+        });
+
+        // parts가 아닌 중복 제거된 부모 부품 리스트(uniqueLogicalParts)를 돌려야 합니다.
+        document.getElementById('explode-slider').addEventListener('input', (e) => {
+            const val = e.target.value / 100;
+            uniqueLogicalParts.forEach(p => {
+                if (p.userData.explodeDir && p.userData.assemblyPos) {
+                    // 부모 오브젝트(BASE, NUT 등)를 직접 이동
+                    const move = p.userData.explodeDir.clone().multiplyScalar(val * 0.3);
+                    p.position.copy(p.userData.assemblyPos).add(move);
+                }
+            });
+        });
+
+        // WASD 이동
+        const keys = { w:false, a:false, s:false, d:false };
+        window.addEventListener('keydown', e => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = true;
+        });
+
+        window.addEventListener('keyup', e => {
+            const key = e.key.toLowerCase();
+            if (keys.hasOwnProperty(key)) keys[key] = false;
+        });
+
+        window.addEventListener('blur', () => {
+             Object.keys(keys).forEach(k => keys[k] = false);
+        });
+
+
+        function handleKeyboardMove() {
+            const speed = 0.01;
+            const fwd = new THREE.Vector3(); camera.getWorldDirection(fwd); fwd.y = 0; fwd.normalize();
+            const right = new THREE.Vector3().crossVectors(camera.up, fwd).normalize();
+            const delta = new THREE.Vector3();
+            if(keys.w) delta.addScaledVector(fwd, speed);
+            if(keys.s) delta.addScaledVector(fwd, -speed);
+            if(keys.a) delta.addScaledVector(right, speed);
+            if(keys.d) delta.addScaledVector(right, -speed);
+            camera.position.add(delta);
+            controls.target.add(delta);
+        }
+
+        loadAsset();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            handleKeyboardMove();
+            controls.update();
+            composer.render();
+        }
+        animate();
+
+        window.addEventListener('resize', () => { 
+            const w = container.clientWidth; const h = container.clientHeight;
+            camera.aspect = w / h; camera.updateProjectionMatrix(); 
+            renderer.setSize(w, h); composer.setSize(w, h);
+        });
+    </script>
+</body>
+</html>
