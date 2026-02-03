@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMVEX - Integrated Viewer</title>
+    <style>
+        /* --- 기본 스타일 --- */
+        :root { --bg-dark: #0f1014; --bg-panel: rgba(20, 22, 28, 0.9); --accent-color: #3b82f6; --text-main: #ffffff; --text-sub: #a1a1aa; --border-color: #27272a; }
+        body { margin: 0; overflow: hidden; background-color: var(--bg-dark); color: var(--text-main); font-family: 'Pretendard', sans-serif; }
+        
+        #app-container { display: grid; grid-template-rows: 60px 1fr; grid-template-columns: 1fr 350px; height: 100vh; width: 100vw; }
+        
+        /* 헤더 */
+        header { grid-column: 1 / -1; background: var(--bg-dark); border-bottom: 1px solid var(--border-color); display: flex; align-items: center; padding: 0 24px; font-weight: bold; font-size: 1.2rem; z-index: 10; }
+        #viewport { position: relative; background: linear-gradient(135deg, #18181b 0%, #09090b 100%); overflow: hidden; width: 100%; height: 100%; }
+        #viewport canvas { outline: none; }
+        #viewport-overlay {
+            position: absolute; bottom: 20px; left: 20px;
+            background: rgba(0,0,0,0.6); padding: 12px 16px; border-radius: 8px;
+            pointer-events: none; /* 클릭이 통과되도록 설정 */
+            font-size: 0.85rem; color: #ccc; backdrop-filter: blur(4px);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 100;
+        }
+        .kbd { background: #333; padding: 2px 6px; border-radius: 4px; font-size: 0.8em; color: white; border-bottom: 2px solid #111; font-family: monospace; }
+        .guide-title { font-weight: bold; color: white; margin-bottom: 6px; }
+
+        /* 패널 (사이드바) */
+        aside { background: var(--bg-panel); border-left: 1px solid var(--border-color); padding: 24px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; }
+        h3 { margin: 0 0 12px 0; font-size: 0.9rem; color: var(--accent-color); text-transform: uppercase; }
+        
+        /* 슬라이더 */
+        .slider-container { margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+        input[type=range] { flex-grow: 1; accent-color: var(--accent-color); cursor: pointer; }
+        
+        /* 로딩 화면 */
+        #loading { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--accent-color); font-size: 1.2rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        <header><div style="color:#3b82f6; margin-right:20px;">SIMVEX</div> Integrated Mode</header>
+        
+        <div id="viewport">
+            <div id="loading">데이터 로딩 중</div>
+            
+            <div id="viewport-overlay">
+                <div class="guide-title">🎮 조작 가이드</div>
+                <div>• <span class="kbd">WASD</span> : 카메라 이동</div>
+                <div>• <span class="kbd">우클릭</span> : 화면 회전</div>
+                <div>• <span class="kbd">좌클릭</span> : 부품 선택</div>
+                <div>• <span class="kbd">휠</span> : 줌 인/아웃</div>
+            </div>
+        </div>
+        <aside>
+            <div>
+                <h3>📦 Part Info</h3>
+                <h2 id="part-name">Loading</h2>
+                <p id="part-desc">모델 데이터를 분석하고 있습니다.</p>
+                <div id="debug-log" style="margin-top:10px; color:yellow; font-size:0.8rem; white-space: pre-line;"></div>
+            </div>
+            <div>
+                <h3>🔧 Exploded View</h3>
+                <div class="slider-container">
+                    <span>조립</span>
+                    <input type="range" id="explode-slider" min="0" max="100" value="0">
+                    <span>분해</span>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="importmap">
+        { "imports": { "three": "https://unpkg.com/three@0.160.0/build/three.module.js", "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/" } }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        const container = document.getElementById('viewport');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.01, 1000);
+        camera.position.set(0.1, 0.1, 0.2); // 초기 카메라 위치
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        container.appendChild(renderer.domElement);
+
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const dirLight = new THREE.DirectionalLight(0xffffff, 2);
+        dirLight.position.set(1, 2, 1);
+        scene.add(dirLight);
+
+        // Controls (OrbitControls)
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        controls.mouseButtons = {
+            LEFT: THREE.MOUSE.PAN,
+            MIDDLE: THREE.MOUSE.DOLLY,
+            RIGHT: THREE.MOUSE.ROTATE
+        };
+
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let parts = [];
+        async function loadIntegratedModel() {
+            const loadingEl = document.getElementById('loading');
+            const debugEl = document.getElementById('debug-log');
+            
+            try {
+                const res = await fetch('./3D_data.json');
+                const data = await res.json();
+                
+                const loader = new GLTFLoader();
+                const glbPath = data.base_path + data.integrated_file;
+
+                loader.load(glbPath, (gltf) => {
+                    const root = gltf.scene;
+                    scene.add(root);
+
+                    /*console.log("=== GLB 내부 부품 목록 ===");
+                    let realNames = [];
+                    root.traverse((child) => {
+                        if (child.isMesh) {
+                            console.log(`이름: ${child.name}`);
+                            realNames.push(child.name);
+                        }
+                    });*/ //디버깅 코드니까 신경쓰지 말것
+
+                    let matchCount = 0;
+                    data.assets.forEach(asset => {
+                        const part = root.getObjectByName(asset.id);
+                        if (part) {
+                            matchCount++;
+                            part.userData = {
+                                id: asset.id,
+                                title: asset.title,
+                                desc: asset.desc,
+                                assemblyPos: part.position.clone()
+                            };
+                            part.castShadow = true;
+                            part.receiveShadow = true;
+                            parts.push(part);
+                        }
+                    });
+
+                    loadingEl.style.display = 'none';
+
+                    if (matchCount > 0) {
+                        document.getElementById('part-name').innerText = data.project_name;
+                        document.getElementById('part-desc').innerText = `${matchCount}개의 부품이 연동되었습니다.`;
+                        calculateExplosion(parts, root);
+                        fitCamera(root);
+                    } else {
+                        document.getElementById('part-name').innerText = "매칭 실패";
+                        document.getElementById('part-desc').innerText = "JSON ID를 확인";
+                        debugEl.innerText = "콘솔(F12)에서 실제 부품 이름을 확인하고\n3D_data.json의 id 수정";
+                    }
+
+                }, undefined, (err) => {
+                    console.error(err);
+                    loadingEl.innerText = "GLB 로드 실패 (경로 확인)";
+                });
+
+            } catch (err) {
+                console.error(err);
+                loadingEl.innerText = "JSON 로드 실패";
+            }
+        }
+
+        function calculateExplosion(partList, root) {
+            const box = new THREE.Box3().setFromObject(root);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            partList.forEach(part => {
+                const pBox = new THREE.Box3().setFromObject(part);
+                const pCenter = new THREE.Vector3();
+                pBox.getCenter(pCenter);
+
+                let dir = new THREE.Vector3().subVectors(pCenter, center);
+                if(dir.length() < 0.0001) dir.set(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5);
+                dir.normalize();
+                part.userData.explodeDir = dir;
+            });
+        }
+
+        function fitCamera(object) {
+            const box = new THREE.Box3().setFromObject(object);
+            const size = box.getSize(new THREE.Vector3());
+            const center = box.getCenter(new THREE.Vector3());
+            const maxDim = Math.max(size.x, size.y, size.z);
+            const dist = maxDim * 2.5; 
+            
+            camera.position.set(center.x + dist, center.y + dist/2, center.z + dist);
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+
+        loadIntegratedModel();
+        document.getElementById('explode-slider').addEventListener('input', (e) => {
+            const val = parseFloat(e.target.value) / 100;
+            const SCALE = 0.15; 
+
+            parts.forEach(part => {
+                if(part.userData.assemblyPos) {
+                    const move = part.userData.explodeDir.clone().multiplyScalar(val * SCALE);
+                    part.position.copy(part.userData.assemblyPos).add(move);
+                }
+            });
+        });
+
+        // 부품 선택 부분
+        let downTime = 0;
+        window.addEventListener('mousedown', () => { downTime = Date.now(); });
+        window.addEventListener('mouseup', (e) => {
+            if (Date.now() - downTime > 200) return; // 200ms 이상 누르면 드래그로 간주
+
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+            
+            const intersects = raycaster.intersectObjects(parts, true);
+            if (intersects.length > 0) {
+                let target = intersects[0].object;
+                while(target) {
+                    if (parts.includes(target)) break;
+                    target = target.parent;
+                }
+
+                if (target) {
+                    document.getElementById('part-name').innerText = target.userData.title;
+                    document.getElementById('part-desc').innerText = target.userData.desc;
+                    
+                    target.traverse(c => {
+                        if(c.isMesh) {
+                            if(!c.userData.orgMat) c.userData.orgMat = c.material;
+                            const m = c.material.clone();
+                            m.emissive.setHex(0x3b82f6);
+                            m.emissiveIntensity = 0.5;
+                            c.material = m;
+                        }
+                    });
+                    setTimeout(() => {
+                         target.traverse(c => { if(c.isMesh && c.userData.orgMat) c.material = c.userData.orgMat; });
+                    }, 500);
+                }
+            }
+        });
+
+        //wasd 키보드 로직
+        const keys = { w:false, a:false, s:false, d:false };
+        window.addEventListener('keydown', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', e => { if(keys.hasOwnProperty(e.key.toLowerCase())) keys[e.key.toLowerCase()] = false; });
+
+        function handleKeyboardMove() {
+            const speed = 0.005; // 이동 속도
+            
+            // 카메라가 바라보는 방향 계산
+            const fwd = new THREE.Vector3(); 
+            camera.getWorldDirection(fwd); 
+            fwd.y = 0; // 높이는 유지하고 수평 이동만
+            fwd.normalize();
+
+            // 오른쪽 방향 계산
+            const right = new THREE.Vector3();
+            right.crossVectors(camera.up, fwd).normalize();
+
+            if(keys.w) camera.position.addScaledVector(fwd, speed);
+            if(keys.s) camera.position.addScaledVector(fwd, -speed);
+            if(keys.a) camera.position.addScaledVector(right, -speed); // 왼쪽
+            if(keys.d) camera.position.addScaledVector(right, speed);  // 오른쪽
+            
+            controls.target.addScaledVector(fwd, 0);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            handleKeyboardMove();
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => { 
+            camera.aspect = container.clientWidth/container.clientHeight; 
+            camera.updateProjectionMatrix(); 
+            renderer.setSize(container.clientWidth, container.clientHeight); 
+        });
+    </script>
+</body>
+</html>

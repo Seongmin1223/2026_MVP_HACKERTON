@@ -1,0 +1,27 @@
+{
+  "project_name": "SIMVEX_Robot_Gripper",
+  "base_path": "./3D_Asset/",
+  "integrated_file": "RobotGripper.glb",
+  "assets": [
+    { "id": "Solid1001", "title": "Base Plate", "desc": "로봇의 바닥 지지대입니다." },
+    { "id": "Solid1002", "title": "Main Frame L", "desc": "메인 프레임 좌측입니다." },
+    { "id": "Solid1003", "title": "Main Frame R", "desc": "메인 프레임 우측입니다." },
+    { "id": "Solid1004", "title": "Gear A", "desc": "동력 전달 기어입니다." },
+    { "id": "Solid1005", "title": "Gear B", "desc": "보조 기어입니다." },
+    { "id": "Solid1006", "title": "Linkage Arm", "desc": "연결 암 부품입니다." },
+    { "id": "Solid1007", "title": "Gripper Jaw 1", "desc": "집게 부분 1번입니다." },
+    { "id": "Solid1008", "title": "Gripper Jaw 2", "desc": "집게 부분 2번입니다." },
+    { "id": "Solid1009", "title": "Servo Motor", "desc": "서보 모터입니다." },
+    { "id": "Solid1010", "title": "Shaft A", "desc": "회전 축 A입니다." },
+    { "id": "Solid1011", "title": "Shaft B", "desc": "회전 축 B입니다." },
+    { "id": "Solid1012", "title": "Bolt & Nut", "desc": "고정용 볼트입니다." },
+    { "id": "Solid1013", "title": "Washer", "desc": "와셔 부품입니다." },
+    { "id": "Solid1014", "title": "Part 14", "desc": "기타 부품입니다." },
+    { "id": "Solid1015", "title": "Part 15", "desc": "기타 부품입니다." },
+    { "id": "Solid1016", "title": "Part 16", "desc": "기타 부품입니다." },
+    { "id": "Solid1017", "title": "Part 17", "desc": "기타 부품입니다." },
+    { "id": "Solid1018", "title": "Part 18", "desc": "기타 부품입니다." },
+    { "id": "Solid1019", "title": "Part 19", "desc": "기타 부품입니다." },
+    { "id": "Solid1020", "title": "Part 20", "desc": "기타 부품입니다." }
+  ]
+}
