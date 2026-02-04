@@ -172,14 +172,16 @@ const FIELD_PRODUCTS = {
 /* ════════════════════════════════════════════ */
 /*  ProductListPage                             */
 /* ════════════════════════════════════════════ */
-export default function ProductListPage({ field, onHome, onBack, onLearn }) {
-  const [activeNav, setActiveNav] = useState("CAD");
-  const navItems = ["Home", "Study", "CAD", "Lab"];
+export default function ProductListPage({ field, onHome, onBack, onLearn, onLab, onTest }) {
+  const [activeNav, setActiveNav] = useState("Study");
+  const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
 
   const handleNav = (item) => {
     setActiveNav(item);
     if (item === "Home")  onHome();
     if (item === "Study") onBack();
+    if (item === "Lab") onLab?.();
+    if (item === "Test") onTest?.();
   };
 
   const products = FIELD_PRODUCTS[field] || FIELD_PRODUCTS["항공 우주 공학"];

@@ -203,7 +203,7 @@ const INIT_MEMOS = [
 /* ════════════════════════════════════════════ */
 /*  LearnPage                                   */
 /* ════════════════════════════════════════════ */
-export default function LearnPage({ onHome, onStudy }) {
+export default function LearnPage({ onHome, onStudy, onLab, onTest }) {
   const [activeNav, setActiveNav]   = useState("Study");
   const [activeTab, setActiveTab]   = useState("조립품");
   const [activePart, setActivePart] = useState(3);
@@ -224,7 +224,7 @@ export default function LearnPage({ onHome, onStudy }) {
   const [chatInput, setChatInput]   = useState("");
   const chatBottomRef               = useRef(null);
 
-  const navItems = ["Home", "Study", "CAD", "Lab"];
+  const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
   const tabs     = ["단일부품", "조립품", "퀴즈", "시뮬레이터"];
 
   /* ── 드래그 스크롤 ── */
@@ -261,6 +261,8 @@ export default function LearnPage({ onHome, onStudy }) {
     setActiveNav(item);
     if (item === "Home")  onHome();
     if (item === "Study") onStudy();
+    if (item === "Lab") onLab?.();
+    if (item === "Test") onTest?.();
   };
 
   /* ── AI 모의 응답 ── */
