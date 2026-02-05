@@ -103,6 +103,9 @@ const PRODUCT_INFO = {
   ],
 };
 
+const difficultyPercent = 72; // 0~100
+
+
 const QUIZ_DATA = [{ question: "제트 엔진의 주요 구성 요소가 아닌 것은?", options: ["압축기", "연소실", "터빈", "프로펠러"], answer: 3 }];
 
 const INIT_MEMOS = [{ label: "기계공학", title: "공학 용어학", content: "• p: 압축\n• σ: 응력" }];
@@ -529,7 +532,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                     )}
 
                     {/* 중앙: 3D 뷰어 */}
-                    <div className="viewer-3d">
+                    <div className={`viewer-3d${(!showInfoPanel || !showProductPanel) ? " expanded" : ""}`}>
                       {selectedModel?.modelUrl ? (
                         <ThreeViewer
                           modelUrl={normalizeModelUrl(selectedModel)}
@@ -573,11 +576,11 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                         </div>
 
                         {partsLoading && <div className="viewer-parts-status">불러오는 중…</div>}
-
                         {partsErr && <div className="viewer-parts-status error">오류: {partsErr}</div>}
 
                         {!partsLoading && !partsErr && (
-                          <>
+                          /* ✅ 헤더 아래 전체를 스크롤 컨테이너로 감싼다 */
+                          <div className="viewer-info-scroll">
                             {/* 부품 썸네일 그리드 */}
                             {parts.length > 0 && (
                               <div className="viewer-parts-grid">
@@ -600,7 +603,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                               </div>
                             )}
 
-                            {/* 선택된 부품 상세 정보 (새 디자인) - 항상 표시 */}
+                            {/* 선택된 부품 상세 정보 (새 디자인) */}
                             <div className="viewer-part-detail-new">
                               <div className="part-section">
                                 <div className="part-section-title">압축기</div>
@@ -629,11 +632,30 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                                   터빈을 지나 배출되는 가스를 이용하여 추진력을 발생시키며 비행기를 앞으로 밀어줍니다.
                                 </div>
                               </div>
+
+                              {/* 난이도 바 (기존 CSS 클래스 사용) */}
+                              <div className="viewer-difficulty">
+                                <div className="viewer-difficulty-label">난이도</div>
+                                <div className="viewer-difficulty-sub">현재 학습 단계별 난이도 표시</div>
+
+                                <div className="viewer-diff-bar-wrap">
+                                  <div className="viewer-diff-bar" />
+                                  {/* ✅ 마커 위치를 동적으로 주고 싶으면 아래처럼 */}
+                                  <div
+                                    className="viewer-diff-marker"
+                                    style={{ left: `${difficultyPercent}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              
                             </div>
-                          </>
+                          </div>
                         )}
                       </div>
                     )}
+
+
 
                     {/* 오른쪽 토글 버튼 (부품 설명 복원) */}
                     {!showInfoPanel && (

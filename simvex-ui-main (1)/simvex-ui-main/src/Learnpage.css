@@ -52,6 +52,7 @@
   flex-direction: column;       /* 본체행만 포함 */
   overflow: hidden;
   position: relative;
+  min-height: 0;
 }
 
 /* ─── 탭 바 + PDF 버튼 행 (뷰어 밖, learn-layout 위) ─── */
@@ -120,6 +121,7 @@
   min-height: 0;
   display: flex;
   position: relative;
+  min-height : 0;
 }
 
 /* 화면 양쪽 끝 토글 버튼 */
@@ -155,13 +157,8 @@
 
 /* 3D 모델 영역 */
 .viewer-3d {
-  flex: 1.2;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: flex 0.3s ease;
+  flex: 1;
+  min-width: 0; 
 }
 .viewer-3d.expanded {
   flex: 2.5;
@@ -191,8 +188,6 @@
 
 
 
-/* 패널 숨길 때 3D영역 전체폭으로 확장 */
-.viewer-3d.expanded { flex: 1 !important; }
 
 /* 패널 복원 버튼 — 공통 기본 스타일 */
 .viewer-panel-restore {
@@ -229,6 +224,9 @@
   flex-direction: column;
   overflow: hidden;
   transition: all 0.3s ease;
+
+  /* ✅ 추가 */
+  min-height: 0;
 }
 .viewer-product-header {
   flex-shrink: 0;
@@ -271,6 +269,9 @@
   flex-direction: column;
   overflow: hidden;
   transition: all 0.3s ease;
+
+  /* ✅ 추가 */
+  min-height: 0;
 }
 
 /* 정보 패널 헤더 행 */
@@ -300,6 +301,22 @@
   transition: all 0.2s;
 }
 .viewer-info-close:hover { background: rgba(255,60,60,0.15); color: #ff6b6b; }
+
+.viewer-info-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+
+  /* 기존 viewer-info-body가 갖고 있던 padding 느낌 유지 */
+  padding: 10px 12px 12px;
+
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0,188,212,0.25) transparent;
+}
+
+.viewer-info-scroll::-webkit-scrollbar { width: 3px; }
+.viewer-info-scroll::-webkit-scrollbar-track { background: transparent; }
+.viewer-info-scroll::-webkit-scrollbar-thumb { background: rgba(0,188,212,0.25); border-radius: 2px; }
 
 /* 부품 그리드 3×2 */
 .viewer-parts-grid {
@@ -384,7 +401,6 @@
 .viewer-diff-marker {
   position: absolute;
   top: 0;
-  left: 55%;
   transform: translateX(-50%);
   width: 0; height: 0;
   border-left: 6px solid transparent;
@@ -1225,6 +1241,11 @@
   border-radius: 12px;
 }
 
+.viewer-3d > * {
+  width: 100%;
+  height: 100%;
+}
+
 /* ─── 조립/분해 슬라이더 ─── */
 .assembly-slider-container {
   position: absolute;
@@ -1373,11 +1394,12 @@
 }
 
 .part-section {
-  background: rgba(15, 25, 45, 0.6);
-  border: 1px solid rgba(0, 188, 212, 0.15);
-  border-radius: 10px;
-  padding: 14px 16px;
-  transition: all 0.2s;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 0 0 16px 0 !important;
+  box-shadow: none !important;
 }
 
 .part-section:hover {
@@ -1386,18 +1408,22 @@
 }
 
 .part-section-title {
-  font-size: 14px;
-  font-weight: 700;
-  color: #00e5ff;
-  margin-bottom: 8px;
-  letter-spacing: 0.3px;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 6px 0;
+  letter-spacing: -0.2px;
 }
 
 .part-section-content {
-  font-size: 12px;
-  line-height: 1.65;
-  color: rgba(255, 255, 255, 0.75);
-  word-break: keep-all;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 0;
+}
+.part-section + .part-section {
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.06);
 }
 
 /* ─── 퀴즈 스타일 ─── */
