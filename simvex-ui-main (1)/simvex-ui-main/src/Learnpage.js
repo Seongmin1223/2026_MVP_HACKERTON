@@ -106,9 +106,35 @@ const PRODUCT_INFO = {
 const difficultyPercent = 72; // 0~100
 
 
-const QUIZ_DATA = [{ question: "제트 엔진의 주요 구성 요소가 아닌 것은?", options: ["압축기", "연소실", "터빈", "프로펠러"], answer: 3 }];
+const QUIZ_DATA = [
+  { 
+    question: "제트 엔진의 주요 구성 요소가 아닌 것은?", 
+    options: ["압축기", "연소실", "터빈", "프로펠러"], 
+    answer: 3 
+  },
+  { 
+    question: "압축기의 주요 역할은 무엇인가?", 
+    options: ["공기를 냉각", "공기를 고압으로 압축", "연료를 분사", "배기가스 배출"], 
+    answer: 1 
+  },
+  { 
+    question: "제트 엔진의 작동 원리는?", 
+    options: ["카르노 사이클", "브레이톤 사이클", "랭킨 사이클", "오토 사이클"], 
+    answer: 1 
+  },
+  { 
+    question: "터빈의 주요 기능은?", 
+    options: ["연료 연소", "공기 흡입", "압축기 구동", "추력 발생"], 
+    answer: 2 
+  },
+  { 
+    question: "노즐에서 발생하는 것은?", 
+    options: ["압축 공기", "고온 가스", "추진력", "냉각수"], 
+    answer: 2 
+  }
+];
 
-const INIT_MEMOS = [{ label: "기계공학", title: "공학 용어학", content: "• p: 압축\n• σ: 응력" }];
+const INIT_MEMOS = [];
 
 /* ════════════════════════════════════════════ */
 /*  LearnPage                                   */
@@ -451,45 +477,106 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
             <div className="learn-content-row">
               <div className="viewer-panel">
                 {activeTab === "퀴즈" ? (
-                  <div className="quiz-box">
-                    <div className="quiz-title">퀴즈 모드</div>
+                  <div className="quiz-container">
                     {!quizFinished ? (
-                      <div className="quiz-question-box">
-                        <div className="quiz-question">{QUIZ_DATA[quizIdx].question}</div>
-                        <div className="quiz-options">
-                          {QUIZ_DATA[quizIdx].options.map((opt, i) => (
-                            <button
-                              key={i}
-                              className={`quiz-option${quizSelected === i ? " selected" : ""}`}
-                              onClick={() => setQuizSelected(i)}
-                              disabled={quizSubmitted}
-                            >
-                              {opt}
-                            </button>
-                          ))}
-                        </div>
-                        {!quizSubmitted ? (
-                          <button className="quiz-submit" onClick={submitQuiz} disabled={quizSelected === null}>
-                            제출
-                          </button>
-                        ) : (
-                          <div className="quiz-result">
-                            <div className={`quiz-result-text ${quizResults[quizResults.length - 1].correct ? "correct" : "wrong"}`}>
-                              {quizResults[quizResults.length - 1].correct ? "정답입니다!" : "오답입니다."}
+                      <>
+                        {/* 퀴즈 헤더 */}
+                        <div className="quiz-header">
+                          <h2 className="quiz-main-title">제트 엔진 퀴즈</h2>
+                          <div className="quiz-progress">
+                            <div className="quiz-progress-bar">
+                              <div 
+                                className="quiz-progress-fill" 
+                                style={{ width: `${((quizIdx + 1) / QUIZ_DATA.length) * 100}%` }}
+                              />
                             </div>
-                            <button className="quiz-next" onClick={nextQuestion}>
+                            <div className="quiz-progress-text">{quizIdx + 1}/{QUIZ_DATA.length}</div>
+                          </div>
+                        </div>
+
+                        {/* 퀴즈 질문 */}
+                        <div className="quiz-question-section">
+                          <div className="quiz-question">{QUIZ_DATA[quizIdx].question}</div>
+                        </div>
+
+                        {/* 퀴즈 옵션 */}
+                        <div className="quiz-options-grid">
+                          {QUIZ_DATA[quizIdx].options.map((opt, i) => {
+                            let optionClass = "quiz-option-new";
+                            
+                            if (quizSubmitted) {
+                              if (i === QUIZ_DATA[quizIdx].answer) {
+                                optionClass += " correct";
+                              } else if (i === quizSelected) {
+                                optionClass += " wrong";
+                              }
+                            } else if (quizSelected === i) {
+                              optionClass += " selected";
+                            }
+
+                            return (
+                              <button
+                                key={i}
+                                className={optionClass}
+                                onClick={() => !quizSubmitted && setQuizSelected(i)}
+                                disabled={quizSubmitted}
+                              >
+                                <span className="quiz-option-number">{i + 1}.</span>
+                                <span className="quiz-option-text">{opt}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+
+                        {/* 피드백 및 버튼 */}
+                        <div className="quiz-feedback">
+                          {quizSubmitted && (
+                            <div className={`quiz-feedback-box ${quizResults[quizResults.length - 1].correct ? "correct" : "wrong"}`}>
+                              {quizResults[quizResults.length - 1].correct 
+                                ? `✓ 정답 해설 – 정답은 ${QUIZ_DATA[quizIdx].options[QUIZ_DATA[quizIdx].answer]}입니다.`
+                                : `✗ 정답 해설 – 정답은 ${QUIZ_DATA[quizIdx].options[QUIZ_DATA[quizIdx].answer]}입니다.`
+                              }
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 하단 버튼 */}
+                        <div className="quiz-actions">
+                          <button className="quiz-btn-secondary" onClick={resetQuiz}>
+                            이전 문제
+                          </button>
+                          {!quizSubmitted ? (
+                            <button 
+                              className="quiz-btn-primary" 
+                              onClick={submitQuiz} 
+                              disabled={quizSelected === null}
+                            >
+                              다음 문제
+                            </button>
+                          ) : (
+                            <button className="quiz-btn-primary" onClick={nextQuestion}>
                               {quizIdx < QUIZ_DATA.length - 1 ? "다음 문제" : "결과 보기"}
                             </button>
-                          </div>
-                        )}
-                      </div>
+                          )}
+                        </div>
+                      </>
                     ) : (
-                      <div className="quiz-final">
+                      <div className="quiz-final-result">
                         <div className="quiz-final-title">퀴즈 완료!</div>
                         <div className="quiz-final-score">
-                          {quizResults.filter((r) => r.correct).length} / {quizResults.length} 정답
+                          <span className="quiz-score-big">{quizResults.filter((r) => r.correct).length}</span>
+                          <span className="quiz-score-divider">/</span>
+                          <span className="quiz-score-total">{quizResults.length}</span>
                         </div>
-                        <button className="quiz-restart" onClick={resetQuiz}>
+                        <div className="quiz-final-message">
+                          {quizResults.filter((r) => r.correct).length === quizResults.length 
+                            ? "완벽합니다! 🎉" 
+                            : quizResults.filter((r) => r.correct).length >= quizResults.length * 0.6
+                            ? "잘하셨습니다! 👏"
+                            : "다시 도전해보세요! 💪"
+                          }
+                        </div>
+                        <button className="quiz-btn-restart" onClick={resetQuiz}>
                           다시 풀기
                         </button>
                       </div>
@@ -767,13 +854,6 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                 <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2L7 9M14 2l-4 12-3-5-5-3 12-4z" />
                 </svg>
-              </button>
-              <button className="learn-web-btn">
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                  <circle cx="6" cy="6" r="4.5" />
-                  <path d="M1.5 6h9M6 1.5c-1.5 1-2.5 2.8-2.5 4.5s1 3.5 2.5 4.5M6 1.5c1.5 1 2.5 2.8 2.5 4.5s-1 3.5-2.5 4.5" />
-                </svg>
-                Web 에서 찾아보기
               </button>
             </div>
           </div>

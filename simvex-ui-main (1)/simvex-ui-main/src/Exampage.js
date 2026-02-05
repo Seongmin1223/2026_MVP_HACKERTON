@@ -111,7 +111,7 @@ const EXAM_DATA = [
 /* ════════════════════════════════════════════ */
 /*  ExamPage                                    */
 /* ════════════════════════════════════════════ */
-export default function ExamPage({ onHome, onStudy, onLab, onTest, selectedProduct, onBack }) {
+export default function ExamPage({ onHome, onStudy, onLab, onTest, field, selectedModels, onBack }) {
   const [activeNav, setActiveNav] = useState("Test");
   const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
 
@@ -227,8 +227,16 @@ export default function ExamPage({ onHome, onStudy, onLab, onTest, selectedProdu
                   </svg>
                 </div>
                 <h2 className="exam-start-title">
-                  {selectedProduct?.title || "항공 우주 공학"} 모의고사
+                  {field} 모의고사
                 </h2>
+                {selectedModels && selectedModels.length > 0 && (
+                  <div className="exam-selected-products">
+                    <span className="exam-selected-label">선택된 완제품:</span>
+                    <span className="exam-selected-list">
+                      {selectedModels.map(m => m.title).join(", ")}
+                    </span>
+                  </div>
+                )}
                 <div className="exam-start-info">
                   <div className="exam-info-item">
                     <span className="exam-info-label">문항 수</span>

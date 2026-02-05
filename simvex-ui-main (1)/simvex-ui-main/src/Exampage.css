@@ -390,3 +390,112 @@
   border-color: rgba(255,255,255,0.4);
   color: #fff;
 }
+/* ── 다중 선택 관련 스타일 ── */
+.pl-selection-info {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2563eb;
+  background: rgba(37,99,235,0.1);
+  border: 1px solid rgba(37,99,235,0.3);
+  border-radius: 8px;
+  padding: 8px 16px;
+}
+
+.pl-multi-select-hint {
+  text-align: center;
+  font-size: 14px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 20px;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+.pl-card {
+  position: relative;
+}
+
+.pl-card.selected {
+  background: rgba(37,99,235,0.12);
+  border-color: rgba(37,99,235,0.4);
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.2);
+}
+
+.pl-card-checkbox {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+}
+
+.checkbox-box {
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  border: 2px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.checkbox-box.checked {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #fff;
+}
+
+.pl-next-btn-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+  padding-bottom: 20px;
+}
+
+.pl-next-btn {
+  background: #2563eb;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 48px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.pl-next-btn:hover {
+  background: #3b82f6;
+  box-shadow: 0 4px 20px rgba(37,99,235,0.4);
+  transform: translateY(-2px);
+}
+
+.exam-selected-products {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 12px 20px;
+  background: rgba(37,99,235,0.08);
+  border: 1px solid rgba(37,99,235,0.2);
+  border-radius: 10px;
+  max-width: 500px;
+}
+
+.exam-selected-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.exam-selected-list {
+  font-size: 14px;
+  font-weight: 500;
+  color: #2563eb;
+  line-height: 1.5;
+}

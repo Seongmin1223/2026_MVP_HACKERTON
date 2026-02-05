@@ -14,13 +14,14 @@ export default function App() {
   const [selectedField, setSelectedField] = useState(null);
   const [selectedModel, setSelectedModel] = useState(null);
   const [examField, setExamField] = useState(null); // 시험 분야
-  const [examProduct, setExamProduct] = useState(null); // 시험 완제품
+  const [examModels, setExamModels] = useState([]); // 시험 완제품들 (배열)
 
   // Test 페이지 (모의고사)
   if (page === "exam") {
     return (
       <ExamPage
-        selectedProduct={examProduct}
+        field={examField}
+        selectedModels={examModels}
         onHome={() => setPage("landing")}
         onStudy={() => setPage("study")}
         onLab={() => setPage("workflow")}
@@ -37,8 +38,9 @@ export default function App() {
         field={examField}
         onHome={() => setPage("landing")}
         onBack={() => setPage("examFieldSelect")}
-        onProductSelect={(product) => {
-          setExamProduct(product);
+        onProductSelect={(field, models) => {
+          setExamField(field);
+          setExamModels(models);
           setPage("exam");
         }}
       />
