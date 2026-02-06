@@ -7,8 +7,8 @@ import "./Productlistpage.css";
  * 분야(한글) -> 포함할 모델 title 매핑 (임시)
  */
 const FIELD_TO_MODEL_TITLES = {
-  "기계 공학": ["V4_Engine", "Robot Arm", "Robot Gripper", "Machine Vice", "Suspension"],
-  "전기 전자 공학": ["Leaf Spring"],
+  "기계 공학": ["V4_Engine", "Robot_Arm", "Robot_Gripper", "Machine_Vice", "Suspension"],
+  "전기 전자 공학": ["Leaf_Spring"],
   "항공 우주 공학": ["Drone"],
   "재료 과학": ["Suspension"],
   "화학 공학": [],
@@ -173,22 +173,22 @@ const DroneIcon = () => (
 // 제품명 -> 아이콘 매핑
 const PRODUCT_ICONS = {
   "V4_Engine": V4EngineIcon,
-  "Robot Arm": RobotArmIcon,
-  "Robot Gripper": RobotGripperIcon,
-  "Machine Vice": MachineViceIcon,
+  "Robot_Arm": RobotArmIcon,
+  "Robot_Gripper": RobotGripperIcon,
+  "Machine_Vice": MachineViceIcon,
   "Suspension": SuspensionIcon,
-  "Leaf Spring": LeafSpringIcon,
+  "Leaf_Spring": LeafSpringIcon,
   "Drone": DroneIcon,
 };
 
 // 제품명 -> 한글 설명 매핑
 const PRODUCT_DESCRIPTIONS = {
   "V4_Engine": "4기통 엔진의 구조와 작동 원리를 학습하세요",
-  "Robot Arm": "산업용 로봇 팔의 관절과 움직임을 탐구하세요",
-  "Robot Gripper": "정밀 그리퍼의 메커니즘을 이해하세요",
-  "Machine Vice": "공작물 고정 장치의 원리를 배워보세요",
+  "Robot_Arm": "산업용 로봇 팔의 관절과 움직임을 탐구하세요",
+  "Robot_Gripper": "정밀 그리퍼의 메커니즘을 이해하세요",
+  "Machine_Vice": "공작물 고정 장치의 원리를 배워보세요",
   "Suspension": "자동차 서스펜션 시스템을 분석하세요",
-  "Leaf Spring": "판 스프링의 탄성 원리를 학습하세요",
+  "Leaf_Spring": "판 스프링의 탄성 원리를 학습하세요",
   "Drone": "드론의 비행 메커니즘을 탐구하세요",
 };
 
@@ -327,19 +327,7 @@ export default function ProductListPage({ field, onHome, onBack, onLearn, onLab,
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="footer">
-          <div className="inner">
-            <div className="footer-links">
-              <button onClick={onHome}>Home</button>
-              <button onClick={onBack}>Back</button>
-            </div>
-            <div className="footer-right">
-              <span>문의 및 연락</span>
-              <span>010-235-7890</span>
-            </div>
-          </div>
-        </footer>
+
       </div>
     </>
   );

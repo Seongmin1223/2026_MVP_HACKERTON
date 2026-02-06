@@ -119,30 +119,6 @@ body,
   color: #fff; font-weight: 600;
 }
 
-/* ─── FOOTER ─── */
-.footer {
-  flex-shrink: 0;
-  z-index: 2;
-  background: #020408;
-  border-top: 1px solid rgba(255,255,255,0.1);
-  padding: 16px 0;
-}
-.footer .inner {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.footer-links { display: flex; gap: 24px; }
-.footer-links button {
-  background: none; border: none;
-  color: rgba(255,255,255,0.4);
-  font-size: 13px; cursor: pointer;
-  font-family: inherit;
-  transition: color 0.2s;
-}
-.footer-links button:hover { color: #fff; }
-.footer-right { display: flex; gap: 28px; align-items: center; }
-.footer-right span { color: rgba(255,255,255,0.35); font-size: 13px; }
 
 /* ─── KEYFRAMES ─── */
 @keyframes fadeUp {

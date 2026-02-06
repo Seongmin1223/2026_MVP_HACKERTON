@@ -83,6 +83,9 @@ export default function App() {
         onStudy={() => setPage("study")}
         onLab={() => setPage("workflow")}
         onTest={() => setPage("examFieldSelect")}
+
+        // ✅ 추가: 완제품 선택(제품 리스트)로 돌아가기
+        onBack={() => setPage("productList")} 
       />
     );
   }

@@ -71,6 +71,10 @@ export default function ExamFieldSelectPage({ onHome, onStudy, onLab, onTest, on
   const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
 
   const handleNav = (item) => {
+    if (item === "CAD") {
+    alert("페이지 준비중입니다");
+    return;
+  }
     setActiveNav(item);
     if (item === "Home") onHome();
     if (item === "Study") onStudy();
@@ -137,22 +141,6 @@ export default function ExamFieldSelectPage({ onHome, onStudy, onLab, onTest, on
           </div>
         </section>
 
-        {/* FOOTER */}
-        <footer className="footer">
-          <div className="inner">
-            <div className="footer-links">
-              {navItems.map((item) => (
-                <button key={item} onClick={() => handleNav(item)}>
-                  {item}
-                </button>
-              ))}
-            </div>
-            <div className="footer-right">
-              <span>문의 및 연락</span>
-              <span>010-235-7890</span>
-            </div>
-          </div>
-        </footer>
       </div>
     </>
   );

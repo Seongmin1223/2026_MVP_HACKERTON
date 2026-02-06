@@ -6,6 +6,7 @@ import ThreeViewer from "./ThreeViewer";
 /* ════════════════════════════════════════════ */
 /*  부품 SVG 아이콘들                             */
 /* ════════════════════════════════════════════ */
+
 const PartFan = () => (
   <svg viewBox="0 0 40 40" fill="none">
     <circle cx="20" cy="20" r="18" fill="#1a2a3a" stroke="#3a6a8a" strokeWidth="1" />
@@ -139,7 +140,7 @@ const INIT_MEMOS = [];
 /* ════════════════════════════════════════════ */
 /*  LearnPage                                   */
 /* ════════════════════════════════════════════ */
-export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTest }) {
+export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTest, onBack }) {
   const [activeNav, setActiveNav] = useState("Study");
   const [activeTab, setActiveTab] = useState("조립품");
 
@@ -169,7 +170,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
   const chatBottomRef = useRef(null);
 
   const navItems = ["Home", "Study", "CAD", "Lab", "Test"];
-  const tabs = ["단일부품", "조립품", "퀴즈", "시뮬레이터"];
+  const tabs = ["조립품", "퀴즈"];
 
   /* 드래그 스크롤 */
   const scrollRef = useRef(null);
@@ -208,6 +209,10 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
   };
 
   const handleNav = (item) => {
+      if (item === "CAD") {
+    alert("페이지 준비중입니다");
+    return;
+  }
     setActiveNav(item);
     if (item === "Home") onHome();
     if (item === "Study") onStudy();
@@ -387,7 +392,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
   };
 
   /* 메모장 */
-  const addMemo = () => setMemos((prev) => [...prev, { label: "새 메모", title: "", content: "" }]);
+  const addMemo = () => setMemos((prev) => [...prev, { title: "", content: "" }]);
   const deleteMemo = (idx) => {
     setMemos((prev) => prev.filter((_, i) => i !== idx));
     if (expandedMemo === idx) setExpandedMemo(null);
@@ -458,13 +463,23 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
           <div className="inner">
             {/* 상단: 탭 + PDF 버튼 */}
             <div className="learn-header-row">
-              <div className="learn-tabs">
+
+              <div className="learn-tabs-wrap">
+                {/* ⬅ 뒤로가기 버튼 */}
+                <button className="learn-back-btn" onClick={onBack} title="뒤로가기">
+                  ‹
+                </button>
+
+                <div className="learn-tabs">
                 {tabs.map((t) => (
                   <button key={t} className={`learn-tab${activeTab === t ? " active" : ""}`} onClick={() => handleTabClick(t)}>
                     {t}
                   </button>
                 ))}
+                </div>
+
               </div>
+
               <button className="pdf-report-btn" onClick={generatePdfReport}>
                 <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M4 2v12M12 2v12M2 8h12" strokeLinecap="round" />
@@ -620,18 +635,35 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
 
                     {/* 중앙: 3D 뷰어 */}
                     <div className={`viewer-3d${(!showInfoPanel || !showProductPanel) ? " expanded" : ""}`}>
-                      {selectedModel?.modelUrl ? (
-                        <ThreeViewer
-                          modelUrl={normalizeModelUrl(selectedModel)}
-                          parts={parts}
-                          selectedPartKey={selectedPartKey}
-                          assemblyProgress={assemblyProgress}
-                          onPartClick={handlePartSelect}
-                        />
-                      ) : (
-                        <ViewerEngineSVG />
-                      )}
+                      <div className="viewer-3d-inner">
+                        {/* ✅ ? 도움말 버튼 (hover 시 사용법 표시) */}
+                        <div className="viewer-help">
+                          <button className="viewer-help-btn" type="button" aria-label="3D 뷰어 사용법">
+                            ?
+                          </button>
+
+                          <div className="viewer-help-tooltip">
+                            <div className="viewer-help-title">3D 뷰어 사용법</div>
+                            <div className="viewer-help-line">좌클릭 : 화면 회전</div>
+                            <div className="viewer-help-line">우클릭 : 화면 이동</div>
+                            <div className="viewer-help-line">휠 : 줌 인/아웃</div>
+                          </div>
+                        </div>
+
+                        {selectedModel?.modelUrl ? (
+                          <ThreeViewer
+                            modelUrl={normalizeModelUrl(selectedModel)}
+                            parts={parts}
+                            selectedPartKey={selectedPartKey}
+                            assemblyProgress={assemblyProgress}
+                            onPartClick={handlePartSelect}
+                          />
+                        ) : (
+                          <ViewerEngineSVG />
+                        )}
+                      </div>
                     </div>
+
 
                     {/* 조립/분해 슬라이더 */}
                     <div className="assembly-slider-container">
@@ -717,21 +749,6 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
                                 <div className="part-section-title">노즐</div>
                                 <div className="part-section-content">
                                   터빈을 지나 배출되는 가스를 이용하여 추진력을 발생시키며 비행기를 앞으로 밀어줍니다.
-                                </div>
-                              </div>
-
-                              {/* 난이도 바 (기존 CSS 클래스 사용) */}
-                              <div className="viewer-difficulty">
-                                <div className="viewer-difficulty-label">난이도</div>
-                                <div className="viewer-difficulty-sub">현재 학습 단계별 난이도 표시</div>
-
-                                <div className="viewer-diff-bar-wrap">
-                                  <div className="viewer-diff-bar" />
-                                  {/* ✅ 마커 위치를 동적으로 주고 싶으면 아래처럼 */}
-                                  <div
-                                    className="viewer-diff-marker"
-                                    style={{ left: `${difficultyPercent}%` }}
-                                  />
                                 </div>
                               </div>
 
@@ -859,15 +876,7 @@ export default function LearnPage({ onHome, onStudy, selectedModel, onLab, onTes
           </div>
         </section>
 
-        <footer className="footer">
-          <div className="inner">
-            <div className="footer-links">{navItems.map((item) => <button key={item} onClick={() => handleNav(item)}>{item}</button>)}</div>
-            <div className="footer-right">
-              <span>문의 및 연락</span>
-              <span>010-235-7890</span>
-            </div>
-          </div>
-        </footer>
+
       </div>
 
       {expandedMemo !== null && memos[expandedMemo] && (

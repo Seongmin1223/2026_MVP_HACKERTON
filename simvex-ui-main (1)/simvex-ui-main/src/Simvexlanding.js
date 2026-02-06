@@ -337,6 +337,10 @@ export default function SimvexLanding({ onStart, onLab, onTest }) {
 
   // Study 클릭 시에도 학습페이지로
   const handleNav = (item) => {
+      if (item === "CAD") {
+    alert("페이지 준비중입니다");
+    return;
+  }
     setActiveNav(item);
     if (item === "Study") onStart();
     if (item === "Lab") onLab?.();
@@ -404,18 +408,6 @@ export default function SimvexLanding({ onStart, onLab, onTest }) {
           </div>
         </section>
 
-        <footer className="footer">
-          <div className="inner">
-            <div className="footer-links">
-              {navItems.map((item) => (
-                <button key={item} onClick={() => handleNav(item)}>{item}</button>
-              ))}
-            </div>
-            <div className="footer-right">
-              <span>문의 및 연락</span><span>010-235-7890</span>
-            </div>
-          </div>
-        </footer>
       </div>
     </>
   );
